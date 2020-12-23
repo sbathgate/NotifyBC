@@ -15,6 +15,7 @@ import {AnyObject} from '@loopback/repository';
 export class CronObserver implements LifeCycleObserver {
   constructor(
     @inject(CoreBindings.APPLICATION_INSTANCE) private app: Application,
+    private jobs: any[] = [],
   ) {}
 
   /**
@@ -32,33 +33,46 @@ export class CronObserver implements LifeCycleObserver {
       {};
     // start purgeData cron
     const cronConfigPurgeData = cronConfig.purgeData || {};
-    new CronJob({
-      cronTime: cronConfigPurgeData.timeSpec,
-      onTick: await cronTasks.purgeData(this.app),
-      start: true,
-    });
+    this.jobs.push(
+      new CronJob({
+        cronTime: cronConfigPurgeData.timeSpec,
+        onTick: await cronTasks.purgeData(this.app),
+        start: true,
+      }),
+    );
     // start dispatchLiveNotifications cron
     const cronConfigDispatchLiveNotifications =
       cronConfig.dispatchLiveNotifications || {};
-    new CronJob({
-      cronTime: cronConfigDispatchLiveNotifications.timeSpec,
-      onTick: await cronTasks.dispatchLiveNotifications(this.app),
-      start: true,
-    });
+    this.jobs.push(
+      new CronJob({
+        cronTime: cronConfigDispatchLiveNotifications.timeSpec,
+        onTick: await cronTasks.dispatchLiveNotifications(this.app),
+        start: true,
+      }),
+    );
     // start checkRssConfigUpdates cron
     const cronConfigCheckRssConfigUpdates =
       cronConfig.checkRssConfigUpdates || {};
-    new CronJob({
-      cronTime: cronConfigCheckRssConfigUpdates.timeSpec,
-      onTick: await cronTasks.checkRssConfigUpdates(this.app),
-      start: true,
-    });
+    this.jobs.push(
+      new CronJob({
+        cronTime: cronConfigCheckRssConfigUpdates.timeSpec,
+        onTick: await cronTasks.checkRssConfigUpdates(this.app),
+        start: true,
+      }),
+    );
     // start deleteBounces cron
     const deleteBounces = cronConfig.deleteBounces || {};
-    new CronJob({
-      cronTime: deleteBounces.timeSpec,
-      onTick: await cronTasks.deleteBounces(this.app),
-      start: true,
-    });
+    this.jobs.push(
+      new CronJob({
+        cronTime: deleteBounces.timeSpec,
+        onTick: await cronTasks.deleteBounces(this.app),
+        start: true,
+      }),
+    );
+  }
+  async stop(): Promise<void> {
+    for (const job of this.jobs) {
+      job.stop();
+    }
   }
 }
